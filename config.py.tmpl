@@ -1,6 +1,21 @@
-jiraEndpoint = <jira endpoint>
-jiraLogin = <jira login>
-jiraPassword = <jira password>
-project = <project name>
-resultCount = <result count>
-repo_dir = <full repository path>
+# Jira config
+jiraEndpoint = "http://jira.atlassian.com/rpc/soap/jirasoapservice-v2"
+jiraLogin = "soaptester"
+jiraPassword = "soaptester"
+project = "TST"
+resultCount = 10
+
+#Git config
+repo_dir = "/home/alekseiko/workspace/test-git-repo"
+repo_urls = {"origin":"git://some", "akornev":"git://some"}
+def_branches = {"origin":"master", "akornev":"ebcloud"}
+jira_to_holders = {"Alexey Kornev":"akornev"}
+is_bulk = true
+main_commiter = "akornev"
+
+#Email notification config
+holders_to_email = {"akornev":"akornev@somemail.net"}
+email_host = "localhost"
+email_port = 21
+from_email = "robot@somemail.net"
+email_subject = "Hey I am robot autocommit"

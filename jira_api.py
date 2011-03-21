@@ -3,45 +3,24 @@
 __author__ = "aleksei.kornev@gmail.com (Aleksei Kornev)"
 
 import SOAPpy
-import time
-from optparse import OptionParser
-
 import config
-
-TIME_FORMAT = "%d%m%Y"
-ISSUE_BY_PART_OF_NAME_JQL = "project = {0} AND summary ~ '{1}'" 
-START_DATE_FIELD = "startDate"
-TIME_SPENT_FIELD = "timeSpent"
-COMMENT_FIELD = "comment"
 
 class JiraEngine: 
 
-	def __init__(self, login, password, url):
+	def __init__(self, login = config.jiraLogin, password = config.jiraPassword, \
+			url = config.jiraEndpoint):
 		self.__client = SOAPpy.SOAPProxy(url)
 		self.__auth = self.__client.login(login, password)
 
-	def addWorklogAndAutoAdjustRemainingEstimate(self, issue, createDate, \
-				timeSpent, comment):
+	def getIssuesKeyAndAssigneeByFilter(self, jira_filter, resultCount = config.resultCount):
 
-		dt_today = SOAPpy.dateTimeType(createDate)
-		worklog = {START_DATE_FIELD:dt_today, \
-				TIME_SPENT_FIELD:timeSpent, \
-				COMMENT_FIELD:comment}
-
-		result = self.__client.addWorklogAndAutoAdjustRemainingEstimate(self.__auth,
-				issue, worklog)
-		
-	def getIssuesByPartOfName(self, partOfName, project = config.project, \
-				resultCount = config.resultCount):
-
-		return [(issue["key"], issue["summary"]) \
-			for issue in self.__client.getIssuesFromJqlSearch(self.__auth, \
-			ISSUE_BY_PART_OF_NAME_JQL.format(project, \
-			partOfName), resultCount)]
-
-
-	def getIssuesByFilter(self, jira_filter, resultCount = config.resultCount):
-
-		return [(issue["key"], issue["summary"]) \
+		return [(issue["key"], issue["assignee"]) \
 			for issue in self.__client.getIssuesFromJqlSearch(self.__auth, \
 				jira_filter, resultCount)]
+
+	def close(self, issue_key):
+		self.__client.updateIssue(self.__auth, issue_key, {"status":"Closed"})
+
+#if __name__ == "__main__":
+#	engine = JiraEngine()
+#	print engine.getIssuesKeyAndAssigneeByFilter("project = 10420 AND issuetype = 1 AND status = 1 AND fixVersion = 13187 AND resolution = EMPTY ORDER BY key DESC")

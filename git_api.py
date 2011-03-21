@@ -28,37 +28,68 @@ class GitEngine:
 
 		if status != 0:
 			raise GitEngineError(status, stderr_value)		
-		
 
-	def fetch(self, remote_path):
-		pass
+		return stdout_value	
+
+	def push(self, remote_path, local_branch, remote_branch)
+		command = "git push %s %s:%s" % (remote_path, local_branch, remote_branch)
+		
+		self.__exec(command)
+
+	def fetch(self, remote_path, refs_name):
+		command = "git fetch " + remote_path
+		# add refs definition
+		command += " +refs/heads/*:refs/remotes/%s/*" % refs_name
+		
+		self.__exec(command)
 
 	def cherry_pick(self, from_sha):
-		pass
+		command = "git cherry-pick %s" % from_sha
 
-	def search(self, branch_name, regexp):
-		pass
+		self.__exec(command)
+
+
+	def search(self, regexp):
+		""" return list of lists sha-> commit time in UNIX timestamp """
+		command = "git log --grep='" + regexp +"' --pretty=format:%H_%ct"
+
+		# split commit shas to list
+		return [ line.split("_") \
+				for line in self.__exec(command).split("\n")]
+
 	
 	def checkout(self, sha, branch_name = None):
-		pass
+		command = "git checkout"
+		
+		if branch_name is not None:
+			command += " -b " + branch_name
 
-	def reset(self, isHard, sha):
+		command += " " + sha
+
+		self.__exec(command)
+			
+	def reset(self, sha, isHard = False):
 		command = "git reset"
 		if isHard:
 			command = command + " --hard"
 		command = command + " " + sha
 		
-		return self.__exec(command)
+		self.__exec(command)
 
 class GitEngineError(Exception):
 	
 	def __init__(self, status, error):
-		self.__status = status
-		self.__error = error
+		self.status = status
+		self.error = error
 
 	def __str__(self):
-		return repr(self.__status + " " + self.__error)
+		return repr(self.status + " " + self.error)
 
 if __name__ == "__main__":
 	engine = GitEngine()
-#	engine.reset(False, "HEAD^")
+#	engine.reset("HEAD^")
+#	print engine.search("1")
+#	engine.checkout(engine.search("h")[1], "test1")
+	engine.checkout("test/master", "test3000")
+#	engine.cherry_pick("test1")
+#	engine.fetch("git://github.com/teamurko/Cube.git", "cube")
