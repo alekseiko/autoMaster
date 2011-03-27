@@ -7,6 +7,9 @@ import config
 import subprocess
 import sys
 
+from logger import get_logger 
+
+LOGGER = get_logger("git_api")
 
 class GitEngine: 
 
@@ -14,6 +17,7 @@ class GitEngine:
 		self.__repo = repo
 
 	def __exec(self, command):
+		LOGGER.debug("Exec command %s" % command)
 		proc = subprocess.Popen(command, cwd = self.__repo, \
 					 stderr = subprocess.PIPE, \
 	                                 stdout = subprocess.PIPE, \
@@ -31,7 +35,7 @@ class GitEngine:
 
 		return stdout_value	
 
-	def push(self, remote_path, local_branch, remote_branch)
+	def push(self, remote_path, local_branch, remote_branch):
 		command = "git push %s %s:%s" % (remote_path, local_branch, remote_branch)
 		
 		self.__exec(command)

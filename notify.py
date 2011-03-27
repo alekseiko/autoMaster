@@ -11,7 +11,7 @@ class NotifyEngine:
 
 	def __init__(self):
 		self.__notes = []
-		self.__transports = [EmailTransport()]
+		self.__transports = [GmailTransport()]
 
 	def notify(self, who, note):
 		""" who is repository holder name  """
@@ -22,13 +22,16 @@ class NotifyEngine:
 			for trans in self.__transports:
 				trans.send(who, note)
 
-class EmailTransport:
+class GmailTransport:
 	
 	def __init__(self, host = config.email_host, \
-				port = config.email_port, from_email = config.from_email):
+				port = config.email_port, from_email = config.from_email, \
+				login = config.email_login, password = config.email_password):
 		self.__host = host
 		self.__port = port
 		self.__from_email = from_email
+		self.__login = login
+		self.__password = password
 
 	def send(self, to, msg_body):
 		to_email = config.holders_to_email[to]
@@ -39,5 +42,17 @@ class EmailTransport:
 		msg["To"] = to_email
 
 		server = SMTP(self.__host, self.__port)
+		server.ehlo()
+		server.starttls()
+		server.ehlo()
+		server.login(self.__login, self.__password)
 		server.sendmail(self.__from_email, to_email, msg.as_string())
-		server.quit()
+		server.close()
+
+#if __name__ == "__main__":
+#	gmail = GmailTransport()
+#	gmail.send("akornev", "Hi i am the robot. Gmail transport works. Thanks :-)")
+#	engine = NotifyEngine()
+#	engine.notify("akornev", "All are fine")
+#	engine.notify("akornev", "Hey All are fine")
+#	engine.send()
