@@ -34,37 +34,21 @@ class AutoMaster:
 		for (issue_key, issue_assignee) in issues:
 			if self.__accept_issue_phase(issue_key, issue_assignee):
 				LOGGER.debug("Accept issue: %s" % issue_key)
+				success_issues.append(issue_key)
 				if not config.is_bulk:
-					LOGGER.debug("Push single issue: %s" % issue_key)
-					try:
-						self.__git.push(config.repo_urls[self.__main_commiter], \
-							config.def_branches[MAIN_GIT], \
-							self.__accept_branch)
-
-						self.__jira.close(issue_key)
-
-					except GitEngineError:
-						self.__note.notify(self.__main_commiter, "Push to server is Fail")
-						LOGGER.error("Non bulk push is Fail")
-						# if push is fail we will not accept anything more
-						break
-						
-				else:
-					success_issues.append(issue_key)
-
+					break;
 		LOGGER.debug("Success issues: %s" % success_issues)
 
-		if config.is_bulk:
-			try:
-				self.__git.push(config.repo_urls[self.__main_commiter], \
-					self.__get_branches_name(MAIN_GIT)[1], \
-					self.__accept_branch)
+		try:
+			self.__git.push(config.repo_urls[self.__main_commiter], \
+				self.__get_branches_name(MAIN_GIT)[1], \
+				self.__accept_branch)
 
-				for issue_key in success_issues:
-					self.__jira.close(issue_key)
-			except:
-				self.__note.notify(self.__main_commiter, "Push to server is Fail")
-				LOGGER.error("Bulk push is fail")
+			for issue_key in success_issues:
+				self.__jira.close(issue_key)
+		except:
+			self.__note.notify(self.__main_commiter, "Push to server is Fail")
+			LOGGER.error("Push is fail. Bulk = %s" % config.is_bulk)
 
 		self.__send_notifications_phase()
 		
