@@ -77,8 +77,8 @@ class AutoMaster:
 		LOGGER.debug("Shas: %s" % shas)
 	
 		if not shas:
-			self.__note.notify(holder_name, "Commits for task %s didn't find in you default branch" % issue_key)
-			LOGGER.error("Commits isn't found for task %s" % issue_key)
+			self.__note.notify(holder_name, "Commits for task %s wasn't find in you default branch" % issue_key)
+			LOGGER.error("Commits aren't found for task %s" % issue_key)
 			return False
 		# sort shas by commit time
 		shas.sort(key = lambda commitInfo: int(commitInfo[1]))
