@@ -11,8 +11,8 @@ from notify import NotifyEngine
 from logger import get_logger 
 
 MAIN_GIT= "origin"
-#ACCEPT_TO_MASTER_FILTER = "project=RAS and status = \"To Be Accepted\""
-ACCEPT_TO_MASTER_FILTER = "issuekey = \"RAS-571\""
+ACCEPT_TO_MASTER_FILTER = "project=RAS and status = \"To Be Accepted\""
+#ACCEPT_TO_MASTER_FILTER = "issuekey = \"RAS-571\""
 LOGGER = get_logger("auto_master")
 
 class AutoMaster: 
@@ -40,15 +40,21 @@ class AutoMaster:
 		LOGGER.debug("Success issues: %s" % success_issues)
 
 		try:
-			self.__git.push(config.repo_urls[self.__main_commiter], \
-				self.__get_branches_name(MAIN_GIT)[1], \
-				self.__accept_branch)
+			if success_issues:
 
-			for issue_key in success_issues:
-				self.__jira.close(issue_key)
-		except:
+				self.__git.push(config.repo_urls[self.__main_commiter], \
+					self.__get_branches_name(MAIN_GIT)[1], \
+					self.__accept_branch)
+
+				for issue_key in success_issues:
+					self.__jira.processWorkflow(issue_key, \
+					config.jira_last_workflow)
+
+		except GitEngineError:
 			self.__note.notify(self.__main_commiter, "Push to server is Fail")
 			LOGGER.error("Push is fail. Bulk = %s" % config.is_bulk)
+		except:
+			raise
 
 		self.__send_notifications_phase()
 		

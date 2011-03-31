@@ -30,7 +30,10 @@ class GitEngine:
 			proc.stdout.close()
 			proc.stderr.close()
 
+		LOGGER.debug("FAIL STATUS %s" % status)
 		if status != 0:
+			LOGGER.debug("Command: %s status: %s err: %s out: %s" % (command, status, \
+					stderr_value, stdout_value))
 			raise GitEngineError(status, stderr_value)		
 
 		return stdout_value	
@@ -56,10 +59,13 @@ class GitEngine:
 	def search(self, regexp):
 		""" return list of lists sha-> commit time in UNIX timestamp """
 		command = "git log --grep='" + regexp +"' --pretty=format:%H_%ct"
-
+		out = self.__exec(command)
+		# if commits aren't found
+		if out == "":
+			return []
 		# split commit shas to list
 		return [ line.split("_") \
-				for line in self.__exec(command).split("\n")]
+				for line in out.split("\n")]
 
 	
 	def checkout(self, sha, branch_name = None):
