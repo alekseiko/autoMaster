@@ -32,8 +32,8 @@ class GitEngine:
 
 		LOGGER.debug("FAIL STATUS %s" % status)
 		if status != 0:
-			LOGGER.debug("Command: %s status: %s err: %s out: %s" % (command, status, \
-					stderr_value, stdout_value))
+#			LOGGER.debug("Command: %s status: %s err: %s out: %s" % (command, status, \
+#					stderr_value, stdout_value))
 			raise GitEngineError(status, stderr_value)		
 
 		return stdout_value	
