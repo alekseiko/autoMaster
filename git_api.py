@@ -32,8 +32,8 @@ class GitEngine:
 
 		LOGGER.debug("FAIL STATUS %s" % status)
 		if status != 0:
-#			LOGGER.debug("Command: %s status: %s err: %s out: %s" % (command, status, \
-#					stderr_value, stdout_value))
+			LOGGER.error("Command: %s status: %s err: %s out: %s" % (command, status, \
+					stderr_value, stdout_value))
 			raise GitEngineError(status, stderr_value)		
 
 		return stdout_value	
@@ -96,10 +96,10 @@ class GitEngineError(Exception):
 		return repr(self.status + " " + self.error)
 
 if __name__ == "__main__":
-	engine = GitEngine()
+#	engine = GitEngine()
 #	engine.reset("HEAD^")
 #	print engine.search("1")
 #	engine.checkout(engine.search("h")[1], "test1")
-	engine.checkout("test/master", "test3000")
+#	engine.checkout("test/master", "test3000")
 #	engine.cherry_pick("test1")
 #	engine.fetch("git://github.com/teamurko/Cube.git", "cube")
