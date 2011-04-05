@@ -95,7 +95,7 @@ class GitEngineError(Exception):
 	def __str__(self):
 		return repr(self.status + " " + self.error)
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 #	engine = GitEngine()
 #	engine.reset("HEAD^")
 #	print engine.search("1")
