@@ -58,7 +58,7 @@ class GitEngine:
 
 	def search(self, regexp):
 		""" return list of lists sha-> commit time in UNIX timestamp """
-		command = "git log --grep='" + regexp +"' --pretty=format:%H_%ct"
+		command = "git log --grep='" + regexp +"' --pretty=format:%H_%at"
 		out = self.__exec(command)
 		# if commits aren't found
 		if out == "":
