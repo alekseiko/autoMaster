@@ -71,13 +71,13 @@ class AutoMaster:
 		""" return true if task is accepted """
 		LOGGER.debug("accept phase task: %s" % issue_key)
 		holder_name = issue_assignee
-		self.__get_changes(holder_name)
+		self.__get_changes(holder_name, issue_key)
 		shas = self.__git.search(issue_key)
 		
 		LOGGER.debug("Shas: %s" % shas)
 	
 		if not shas:
-			self.__note.notify(holder_name, "Commits for task %s wasn't find in you default branch" % issue_key)
+			self.__note.notify(holder_name, "Commits for task %s wasn't found in you default branch" % issue_key)
 			LOGGER.error("Commits aren't found for task %s" % issue_key)
 			return False
 		# sort shas by commit time
@@ -106,15 +106,25 @@ class AutoMaster:
 		LOGGER.debug("Send phase")
 		self.__note.send()
 	
-	def __get_branches_name(self, holder_name):
+	def __get_branches_name(self, holder_name, issue_key = None):
 		""" return tuple of branches(remote,local) for holder"""
-		checkout_point =  (holder_name, config.def_branches[holder_name])
+		checkout_point =  (holder_name, self.__get_branch(holder_name, issue_key)) 
 		return ("%s/%s" % checkout_point, "%s_%s" % checkout_point)
 
-	def __get_changes(self, holder_name):
+	def __get_branch(self, holder_name, issue_key = None):
+		branch_name = ""
+		if issue_key is not None:
+			branch_name = self.__jira.getFieldValue(issue_key, config.jira_branch_field)
+
+		if branch_name == "":
+			branch_name = config.def_branches[holder_name]
+
+		return branch_name
+
+	def __get_changes(self, holder_name, issue_key = None):
 		self.__git.fetch(config.repo_urls[holder_name], holder_name)
 		
-		(remote_branch, local_branch) = self.__get_branches_name(holder_name)
+		(remote_branch, local_branch) = self.__get_branches_name(holder_name, issue_key)
 		try:
 			self.__git.checkout(remote_branch, local_branch)
 		except GitEngineError:	
