@@ -56,9 +56,14 @@ class GitEngine:
 		self.__exec(command)
 
 
-	def search(self, regexp):
+	def search(self, regexp, master_branch = None, slave_branch = None):
 		""" return list of lists sha-> commit time in UNIX timestamp """
-		command = "git log --grep='" + regexp +"' --pretty=format:%H_%at"
+		command = "git log"
+
+		if master_branch not is None && slave_branch not is None:
+			command += " %s..%s" % (master_branch, slave_branch)
+
+		command += " --grep='" + regexp +"' --pretty=format:%H_%at"
 		out = self.__exec(command)
 		# if commits aren't found
 		if out == "":

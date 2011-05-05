@@ -71,8 +71,12 @@ class AutoMaster:
 		""" return true if task is accepted """
 		LOGGER.debug("accept phase task: %s" % issue_key)
 		holder_name = issue_assignee
-		self.__get_changes(holder_name, issue_key)
-		shas = self.__git.search(issue_key)
+
+		accept_branch = self.__get_changes(holder_name, issue_key)
+
+		main_branch = self.__get_branches_name(MAIN_GIT)[1]		
+
+		shas = self.__git.search(issue_key, main_branch, accept_branch)
 		
 		LOGGER.debug("Shas: %s" % shas)
 	
@@ -84,7 +88,7 @@ class AutoMaster:
 		shas.sort(key = lambda commitInfo: int(commitInfo[1]))
 
 		# checkout local master branch
-		self.__git.checkout(self.__get_branches_name(MAIN_GIT)[1])
+		self.__git.checkout(main_branch)
 					
 		commit_count = 0
 		try:
@@ -132,6 +136,8 @@ class AutoMaster:
 			# And we need to checkout the branch and reset it to fetched branch with --hard
 			self.__git.checkout(local_branch)
 			self.__git.reset(remote_branch, True)
+
+		return local_branch
 		
 
 if __name__ == "__main__":
