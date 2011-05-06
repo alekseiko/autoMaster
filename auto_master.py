@@ -27,16 +27,21 @@ class AutoMaster:
 	def main(self):
 		# run first phase
 		self.__init_master_phase()
-		issues = self.__get_jira_issues_phase()
+		groupped_issues = self.__get_jira_issues_phase()
 		#debug second phase
-		LOGGER.debug("Issues: %s" %issues)
+		LOGGER.debug("Issues: %s" % groupped_issues)
 		success_issues = []
-		for (issue_key, issue_assignee) in issues:
-			if self.__accept_issue_phase(issue_key, issue_assignee):
-				LOGGER.debug("Accept issue: %s" % issue_key)
-				success_issues.append(issue_key)
-				if not config.is_bulk:
-					break;
+		for (issue_assignee, branch_groups) in groupped_issues.items(): 
+			LOGGER.debug("Branch groups: %s", branch_groups)
+			for branch in branch_groups:
+				issue_keys = branch_groups[branch]
+				if self.__accept_issue_phase(issue_keys, issue_assignee, branch):
+					LOGGER.debug("Accept issue: %s" % issue_keys)
+					success_issues += issue_keys
+
+					if not config.is_bulk:
+						break;
+
 		LOGGER.debug("Success issues: %s" % success_issues)
 
 		try:
@@ -61,28 +66,50 @@ class AutoMaster:
 
 	def __init_master_phase(self):
 		LOGGER.debug("init phase")
-		self.__get_changes(MAIN_GIT)
+		self.__get_changes(MAIN_GIT, config.def_branches[MAIN_GIT])
 
 	def __get_jira_issues_phase(self):
-		""" return list of tuples (issue key -> assignee) """
-		return self.__jira.getIssuesKeyAndAssigneeByFilter(ACCEPT_TO_MASTER_FILTER)	
+		""" return groupped_issues["author"]["branch"] = issues  """
+		issues = self.__jira.getIssuesKeyAndAssigneeByFilter(ACCEPT_TO_MASTER_FILTER)	
 
-	def __accept_issue_phase(self, issue_key, issue_assignee):
+		groupped_issues = {}
+		for (issue_key, issue_assigner) in issues:
+			if not issue_assigner in groupped_issues:
+				groupped_issues[issue_assigner] = {}
+
+			branch = self.__get_branch(issue_assigner, issue_key)
+
+			if not branch in groupped_issues[issue_assigner]:
+				groupped_issues[issue_assigner][branch] = []
+			
+			groupped_issues[issue_assigner][branch].append(issue_key)
+		
+		return groupped_issues	
+
+	def __accept_issue_phase(self, issue_keys, issue_assignee, branch):
 		""" return true if task is accepted """
-		LOGGER.debug("accept phase task: %s" % issue_key)
+		LOGGER.debug("accept phase task: %s" % issue_keys)
 		holder_name = issue_assignee
 
-		accept_branch = self.__get_changes(holder_name, issue_key)
+		accept_branch = self.__get_changes(holder_name, branch)
 
-		main_branch = self.__get_branches_name(MAIN_GIT)[1]		
+		main_branch = self.__get_branches_name(MAIN_GIT,\
+				config.def_branches[MAIN_GIT])[1]		
 
-		shas = self.__git.search(issue_key, main_branch, accept_branch)
-		
+		shas = None
+		LOGGER.debug("Issue keys: %s" % issue_keys)
+		for issue_key in issue_keys:
+			sha_list = self.__git.search(issue_key, main_branch, accept_branch)
+			if shas is None:
+				shas = sha_list
+			else:
+				shas += sha_list
+
 		LOGGER.debug("Shas: %s" % shas)
 	
 		if not shas:
-			self.__note.notify(holder_name, "Commits for task %s wasn't found in you default branch" % issue_key)
-			LOGGER.error("Commits aren't found for task %s" % issue_key)
+			self.__note.notify(holder_name, "Commits for task %s wasn't found in you default branch" % issue_keys)
+			LOGGER.error("Commits aren't found for task %s" % issue_keys)
 			return False
 		# sort shas by commit time
 		shas.sort(key = lambda commitInfo: int(commitInfo[1]))
@@ -100,8 +127,8 @@ class AutoMaster:
 		except GitEngineError:
 			# reset to master
 			self.__git.reset("HEAD~%d" % commit_count, True)		
-			self.__note.notify(holder_name, "Conflicts until cherry-pick of task %s" % issue_key)
-			LOGGER.error("Cherry-pick conflict task %s" % issue_key)
+			self.__note.notify(holder_name, "Conflicts until cherry-pick of task %s" % issue_keys)
+			LOGGER.error("Cherry-pick conflict task %s" % issue_keys)
 			return False
 
 		return True
@@ -110,14 +137,14 @@ class AutoMaster:
 		LOGGER.debug("Send phase")
 		self.__note.send()
 	
-	def __get_branches_name(self, holder_name, issue_key = None):
+	def __get_branches_name(self, holder_name, branch):
 		""" return tuple of branches(remote,local) for holder"""
-		checkout_point =  (holder_name, self.__get_branch(holder_name, issue_key)) 
+		checkout_point =  (holder_name, branch) 
 		return ("%s/%s" % checkout_point, "%s_%s" % checkout_point)
 
 	def __get_branch(self, holder_name, issue_key = None):
 		branch_name = ""
-		if issue_key is not None:
+		if not issue_key is None:
 			branch_name = self.__jira.getFieldValue(issue_key, config.jira_branch_field)
 
 		if branch_name == "":
@@ -125,10 +152,11 @@ class AutoMaster:
 
 		return branch_name
 
-	def __get_changes(self, holder_name, issue_key = None):
+	def __get_changes(self, holder_name, branch):
 		self.__git.fetch(config.repo_urls[holder_name], holder_name)
 		
-		(remote_branch, local_branch) = self.__get_branches_name(holder_name, issue_key)
+		(remote_branch, local_branch) = self.__get_branches_name(holder_name, branch)
+
 		try:
 			self.__git.checkout(remote_branch, local_branch)
 		except GitEngineError:	
