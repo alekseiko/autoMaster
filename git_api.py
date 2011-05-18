@@ -60,7 +60,7 @@ class GitEngine:
 		""" return list of lists sha-> commit time in UNIX timestamp """
 		command = "git log"
 
-		if master_branch not is None && slave_branch not is None:
+		if master_branch  is not None and slave_branch is not None:
 			command += " %s..%s" % (master_branch, slave_branch)
 
 		command += " --grep='" + regexp +"' --pretty=format:%H_%at"

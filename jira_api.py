@@ -37,6 +37,7 @@ class JiraEngine:
 		for value in field_values:
 			if value["customfieldId"] == field_id:
 				return value["values"][0]
+		return ""
 
 	def __findFieldId(self, issue_key, field_name):
 		fields = self.__client.getFieldsForEdit(self.__auth, issue_key)
